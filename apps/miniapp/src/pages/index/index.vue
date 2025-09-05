@@ -292,6 +292,20 @@ export default {
 
       if (!banner.linkType || banner.linkType === 'NONE') {
         console.log('⏭️ 无链接类型，跳过处理')
+        uni.showToast({
+          title: '暂无链接',
+          icon: 'none'
+        })
+        return
+      }
+
+      // 验证链接值
+      if (!banner.linkValue) {
+        console.log('⚠️ 链接值为空，无法跳转')
+        uni.showToast({
+          title: '链接配置错误',
+          icon: 'error'
+        })
         return
       }
 
@@ -299,58 +313,80 @@ export default {
 
       switch (banner.linkType) {
         case 'ARTICLE':
-          // 跳转到文章详情页
-          if (banner.linkValue) {
-            console.log('📰 跳转到文章详情页:', banner.linkValue)
-            uni.navigateTo({
-              url: `/pages/article/detail?id=${banner.linkValue}`
-            })
-          } else {
-            console.log('⚠️ 文章链接值为空')
-          }
-          break
-        case 'ACTIVITY':
-          // 跳转到活动详情页
-          if (banner.linkValue) {
-            console.log('🎯 跳转到活动详情页:', banner.linkValue)
-            uni.navigateTo({
-              url: `/pages/activity/detail?id=${banner.linkValue}`
-            })
-          } else {
-            console.log('⚠️ 活动链接值为空')
-          }
-          break
-        case 'EXTERNAL':
-          // 外部链接或内部页面
-          if (banner.linkValue) {
-            if (banner.linkValue.startsWith('http')) {
-              // 外部链接，可以使用web-view或提示用户
-              console.log('🌐 处理外部链接:', banner.linkValue)
-              uni.showModal({
-                title: '提示',
-                content: '即将跳转到外部链接',
-                success: (res) => {
-                  if (res.confirm) {
-                    // 这里可以实现web-view跳转
-                    console.log('✅ 用户确认跳转到外部链接:', banner.linkValue)
-                  } else {
-                    console.log('❌ 用户取消跳转')
-                  }
-                }
-              })
-            } else {
-              // 内部页面跳转
-              console.log('📱 跳转到内部页面:', banner.linkValue)
-              uni.navigateTo({
-                url: banner.linkValue
+          console.log('📰 跳转到文章详情页:', banner.linkValue)
+          uni.navigateTo({
+            url: `/pages/article/detail?id=${banner.linkValue}`,
+            fail: (error) => {
+              console.error('跳转文章详情页失败:', error)
+              uni.showToast({
+                title: '页面跳转失败',
+                icon: 'error'
               })
             }
+          })
+          break
+        case 'ACTIVITY':
+          console.log('🎯 跳转到活动详情页:', banner.linkValue)
+          uni.navigateTo({
+            url: `/pages/activity/detail?id=${banner.linkValue}`,
+            fail: (error) => {
+              console.error('跳转活动详情页失败:', error)
+              uni.showToast({
+                title: '页面跳转失败',
+                icon: 'error'
+              })
+            }
+          })
+          break
+        case 'EXTERNAL':
+          if (banner.linkValue.startsWith('http')) {
+            // 外部链接，复制到剪贴板
+            console.log('🌐 处理外部链接:', banner.linkValue)
+            uni.showModal({
+              title: '提示',
+              content: '即将跳转到外部链接，是否继续？',
+              success: (res) => {
+                if (res.confirm) {
+                  // 复制链接到剪贴板
+                  uni.setClipboardData({
+                    data: banner.linkValue,
+                    success: () => {
+                      uni.showToast({
+                        title: '链接已复制到剪贴板',
+                        icon: 'success'
+                      })
+                    },
+                    fail: () => {
+                      uni.showToast({
+                        title: '复制失败',
+                        icon: 'error'
+                      })
+                    }
+                  })
+                }
+              }
+            })
           } else {
-            console.log('⚠️ 外部链接值为空')
+            // 内部页面跳转
+            console.log('📱 跳转到内部页面:', banner.linkValue)
+            uni.navigateTo({
+              url: banner.linkValue,
+              fail: (error) => {
+                console.error('跳转内部页面失败:', error)
+                uni.showToast({
+                  title: '页面跳转失败',
+                  icon: 'error'
+                })
+              }
+            })
           }
           break
         default:
           console.log('❓ 未知的链接类型:', banner.linkType)
+          uni.showToast({
+            title: '链接类型不支持',
+            icon: 'error'
+          })
       }
     },
 
@@ -359,64 +395,53 @@ export default {
       console.log('🎠 开始加载轮播图数据...')
 
       try {
-        const { createCachedRequest, CACHE_CONFIG } = await import('../../utils/cache.js')
+        // 先尝试直接API调用，避免缓存配置问题
         const { buildApiUrl } = await import('../../config/api.js')
 
-        const data = await createCachedRequest(
-          'banners_list',
-          async () => {
-            const response = await uni.request({
-              url: buildApiUrl('/banners'),
-              method: 'GET'
-            })
+        const response = await uni.request({
+          url: buildApiUrl('/banners'),
+          method: 'GET'
+        })
 
-            console.log('🎠 轮播图API响应:', { statusCode: response.statusCode, data: response.data })
+        console.log('🎠 轮播图API响应:', { statusCode: response.statusCode, data: response.data })
 
-            if (response.statusCode === 200) {
-              return response.data
-            } else {
-              throw new Error(`HTTP ${response.statusCode}`)
-            }
-          },
-          {
-            ttl: CACHE_CONFIG.TTL.BANNERS,
-            forceRefresh: false
-          }
-        )
+        if (response.statusCode === 200) {
+          this.banners = response.data.map(banner => ({
+            id: banner.id,
+            image: banner.imageUrl,
+            title: banner.title,
+            linkType: banner.linkType,
+            linkValue: banner.linkValue
+          }))
 
-        this.banners = data.map(banner => ({
-          id: banner.id,
-          image: banner.imageUrl,
-          title: banner.title,
-          linkType: banner.linkType,
-          linkValue: banner.linkValue
-        }))
-
-        console.log('🎠 格式化后的轮播图数据:', this.banners)
-        console.log('✅ 轮播图数据加载完成')
+          console.log('🎠 格式化后的轮播图数据:', this.banners)
+          console.log('✅ 轮播图数据加载完成')
+        } else {
+          throw new Error(`HTTP ${response.statusCode}`)
+        }
       } catch (error) {
         console.error('❌ 加载轮播图失败:', error)
 
-        // 使用模拟数据作为后备
-        console.log('🔄 使用模拟轮播图数据...')
+        // 使用安全的后备数据，指向实际存在的资源
+        console.log('🔄 使用后备轮播图数据...')
         this.banners = [
           {
-            id: 'mock-banner-1',
-            image: '/static/images/banner1.jpg',
-            title: '春季钓鱼大赛',
+            id: 'fallback-banner-1',
+            image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=400&fit=crop',
+            title: '亲子钓鱼活动',
             linkType: 'ACTIVITY',
-            linkValue: 'spring-fishing-contest'
+            linkValue: 'family-fishing'
           },
           {
-            id: 'mock-banner-2',
-            image: '/static/images/banner2.jpg',
+            id: 'fallback-banner-2',
+            image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=400&fit=crop',
             title: '新品装备上市',
-            linkType: 'ARTICLE',
-            linkValue: 'mock-1'
+            linkType: 'EXTERNAL',
+            linkValue: 'https://shop.example.com'
           }
         ]
 
-        console.log('🔄 使用模拟数据后的轮播图:', this.banners)
+        console.log('🔄 使用后备数据后的轮播图:', this.banners)
       }
     },
 
@@ -432,7 +457,7 @@ export default {
       try {
         this.loadingMore = true
 
-        const requestUrl = buildApiUrl(API_CONFIG.ENDPOINTS.NEWS.LIST)
+        const requestUrl = buildApiUrl('/news/public')
         const requestData = {
           page: refresh ? 1 : this.newsPage,
           limit: this.newsPageSize

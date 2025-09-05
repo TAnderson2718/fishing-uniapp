@@ -256,7 +256,7 @@ async function loadPosts() {
       params.append('status', filters.status)
     }
 
-    const response = await fetch(`http://localhost:3000/posts/admin?${params}`, {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/posts/admin?${params}`, {
       headers: {
         'Authorization': `Bearer ${auth.token}`,
         'Content-Type': 'application/json'
@@ -285,13 +285,13 @@ async function loadPosts() {
 async function loadStats() {
   try {
     const [pendingRes, approvedRes, rejectedRes] = await Promise.all([
-      fetch('http://localhost:3000/posts/admin?status=PENDING&limit=1', {
+      fetch(`${import.meta.env.VITE_API_BASE_URL}/posts/admin?status=PENDING&limit=1`, {
         headers: { 'Authorization': `Bearer ${auth.token}` }
       }),
-      fetch('http://localhost:3000/posts/admin?status=APPROVED&limit=1', {
+      fetch(`${import.meta.env.VITE_API_BASE_URL}/posts/admin?status=APPROVED&limit=1`, {
         headers: { 'Authorization': `Bearer ${auth.token}` }
       }),
-      fetch('http://localhost:3000/posts/admin?status=REJECTED&limit=1', {
+      fetch(`${import.meta.env.VITE_API_BASE_URL}/posts/admin?status=REJECTED&limit=1`, {
         headers: { 'Authorization': `Bearer ${auth.token}` }
       })
     ])
@@ -317,7 +317,7 @@ async function loadStats() {
 async function approvePost(post) {
   post.approving = true
   try {
-    const response = await fetch(`http://localhost:3000/posts/${post.id}/status`, {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/posts/${post.id}/status`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -351,7 +351,7 @@ async function rejectPost(post) {
     })
 
     post.rejecting = true
-    const response = await fetch(`http://localhost:3000/posts/${post.id}/status`, {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/posts/${post.id}/status`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -381,7 +381,7 @@ async function rejectPost(post) {
 async function deletePost(post) {
   post.deleting = true
   try {
-    const response = await fetch(`http://localhost:3000/posts/${post.id}`, {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/posts/${post.id}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${auth.token}`
