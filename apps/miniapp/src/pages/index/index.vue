@@ -432,7 +432,7 @@ export default {
       try {
         this.loadingMore = true
 
-        const requestUrl = buildApiUrl(API_CONFIG.ENDPOINTS.ARTICLES.LIST)
+        const requestUrl = buildApiUrl(API_CONFIG.ENDPOINTS.NEWS.LIST)
         const requestData = {
           page: refresh ? 1 : this.newsPage,
           limit: this.newsPageSize
@@ -450,17 +450,20 @@ export default {
         console.log('📥 API响应:', { statusCode: response.statusCode, data: response.data })
 
         if (response.statusCode === 200) {
-          const { data, pagination } = response.data
+          // News API 响应格式: { success: true, data: { items: [], total, page, pageSize, totalPages } }
+          const responseData = response.data.data || response.data
+          const newsItems = responseData.items || responseData.data || []
+          const pagination = responseData.pagination || responseData
 
-          console.log('📊 原始数据:', { articlesCount: data.length, pagination })
+          console.log('📊 原始数据:', { newsCount: newsItems.length, pagination })
 
           // 转换数据格式以适配现有UI
-          const formattedNews = data.map(article => ({
-            id: article.id,
-            title: article.title,
-            summary: article.summary || (article.content ? article.content.substring(0, 100) + '...' : ''),
-            thumbnail: article.coverImage || '/static/images/default-news.jpg',
-            publishTime: new Date(article.publishedAt).getTime()
+          const formattedNews = newsItems.map(news => ({
+            id: news.id,
+            title: news.title,
+            summary: news.content ? news.content.substring(0, 100) + '...' : '',
+            thumbnail: '/static/images/default-news.jpg', // News模型没有coverImage字段
+            publishTime: new Date(news.publishedAt).getTime()
           }))
 
           console.log('🔄 格式化后的数据:', formattedNews)
@@ -476,7 +479,7 @@ export default {
           console.log('✅ 更新后的newsList:', this.newsList)
 
           // 检查是否还有更多数据
-          this.noMoreNews = pagination.page >= pagination.totalPages
+          this.noMoreNews = (pagination.page >= pagination.totalPages) || (newsItems.length === 0)
         } else {
           throw new Error(`HTTP ${response.statusCode}`)
         }

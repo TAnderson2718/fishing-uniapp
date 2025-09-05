@@ -54,6 +54,12 @@ export const API_CONFIG = {
       LIST: '/articles',
       DETAIL: '/articles'
     },
+
+    // 新闻资讯相关
+    NEWS: {
+      LIST: '/news/public',
+      DETAIL: '/news/public'
+    },
     
     // 轮播图
     BANNERS: '/banners',
