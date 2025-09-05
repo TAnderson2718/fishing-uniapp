@@ -1,0 +1,86 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  api-e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: fishing_app_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fishing_app_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm ci
+        working-directory: services/api
+      - run: npx prisma generate
+        working-directory: services/api
+      - run: npm run test:e2e
+        working-directory: services/api
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-coverage
+          path: services/api/coverage-e2e
+
+  admin-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+        working-directory: apps/admin
+      - run: npx playwright install --with-deps
+        working-directory: apps/admin
+      - run: npm run test:e2e
+        working-directory: apps/admin
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-playwright-report
+          path: apps/admin/playwright-report
+
+  miniapp-e2e:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+        working-directory: apps/miniapp
+      - name: Run miniprogram automator (placeholder)
+        run: node ./tests/automator.spec.ts
+        working-directory: apps/miniapp
+      - name: Upload Miniapp logs
+        if: always()
+        run: |
+          mkdir -p tests-output
+          echo "Miniapp e2e finished" > tests-output/log.txt
+        working-directory: apps/miniapp
+      - uses: actions/upload-artifact@v4
+        with:
+          name: miniapp-e2e-logs
+          path: apps/miniapp/tests-output
+

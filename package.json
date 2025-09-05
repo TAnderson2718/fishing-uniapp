@@ -1,0 +1,29 @@
+{
+  "name": "fishing-uniapp",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:miniprogram": "node miniprogram-test-cli.js test",
+    "test:miniprogram:build": "node miniprogram-test-cli.js build",
+    "test:miniprogram:check": "node miniprogram-test-cli.js check",
+    "test:miniprogram:setup": "node miniprogram-test-cli.js setup",
+    "test:miniprogram:all": "node miniprogram-test-cli.js all"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "private": "true",
+  "workspaces": [
+    "apps/*",
+    "services/*",
+    "packages/*"
+  ],
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "miniprogram-automator": "^0.12.1"
+  }
+}

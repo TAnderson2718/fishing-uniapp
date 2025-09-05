@@ -1,0 +1,140 @@
+{
+	"pages": [
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "钓鱼平台"
+			}
+		},
+		{
+			"path": "pages/activity/detail",
+			"style": {
+				"navigationBarTitleText": "活动详情"
+			}
+		},
+		{
+			"path": "pages/booking/booking",
+			"style": {
+				"navigationBarTitleText": "活动预约"
+			}
+		},
+		{
+			"path": "pages/booking/calendar",
+			"style": {
+				"navigationBarTitleText": "选择预约日期"
+			}
+		},
+		{
+			"path": "pages/booking/form",
+			"style": {
+				"navigationBarTitleText": "填写预约信息"
+			}
+		},
+		{
+			"path": "pages/orders/list",
+			"style": {
+				"navigationBarTitleText": "我的订单"
+			}
+		},
+		{
+			"path": "pages/orders/detail",
+			"style": {
+				"navigationBarTitleText": "订单详情"
+			}
+		},
+		{
+			"path": "pages/staff/verification",
+			"style": {
+				"navigationBarTitleText": "订单核销"
+			}
+		},
+		{
+			"path": "pages/member/center",
+			"style": {
+				"navigationBarTitleText": "会员中心"
+			}
+		},
+		{
+			"path": "pages/auth/login",
+			"style": {
+				"navigationBarTitleText": "用户登录"
+			}
+		},
+		{
+			"path": "pages/demo/time-management",
+			"style": {
+				"navigationBarTitleText": "时间管理系统演示"
+			}
+		},
+		{
+			"path": "pages/payment/payment",
+			"style": {
+				"navigationBarTitleText": "订单支付"
+			}
+		},
+		{
+			"path": "pages/payment/success",
+			"style": {
+				"navigationBarTitleText": "支付成功"
+			}
+		},
+		{
+			"path": "pages/community/index",
+			"style": {
+				"navigationBarTitleText": "渔友圈"
+			}
+		},
+		{
+			"path": "pages/community/publish",
+			"style": {
+				"navigationBarTitleText": "发布动态"
+			}
+		},
+		{
+			"path": "pages/community/detail",
+			"style": {
+				"navigationBarTitleText": "动态详情"
+			}
+		},
+		{
+			"path": "pages/profile/index",
+			"style": {
+				"navigationBarTitleText": "个人中心"
+			}
+		},
+		{
+			"path": "pages/admin/date-management",
+			"style": {
+				"navigationBarTitleText": "日期管理"
+			}
+		}
+,
+			{
+				"path": "pages/article/detail",
+				"style": {
+					"navigationBarTitleText": "文章详情"
+				}
+			}
+,
+			{
+				"path": "pages/test/api-test",
+				"style": {
+					"navigationBarTitleText": "API测试"
+				}
+			}
+,
+			{
+				"path": "pages/membership/index",
+				"style": {
+					"navigationBarTitleText": "我的会员"
+				}
+			}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "white",
+		"navigationBarTitleText": "钓鱼平台",
+		"navigationBarBackgroundColor": "#667eea",
+		"backgroundColor": "#f5f5f5"
+	},
+
+}

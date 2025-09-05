@@ -1,0 +1,14 @@
+{
+  "migration_timestamp": "2025-09-03T18:42:49+08:00",
+  "source_database": "postgresql://daniel@localhost:5432/wanyu_diaowan_dev",
+  "target_database": "postgresql://fishing_dev:FishDev2025#Secure!@1.15.116.152:5432/fishing_platform_shared",
+  "backup_file": "./database-backups/fishing_platform_backup_20250903_182637.sql",
+  "migration_status": "completed",
+  "verification": {
+    "local_table_count": 25,
+    "remote_table_count": 0,
+    "local_user_count": 8,
+    "remote_user_count": ,
+    "data_integrity": false
+  }
+}

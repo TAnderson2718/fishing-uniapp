@@ -1,0 +1,13 @@
+{
+  "backup_timestamp": "20250903_182637",
+  "backup_file": "fishing_platform_backup_20250903_182637.sql",
+  "backup_path": "./database-backups/fishing_platform_backup_20250903_182637.sql",
+  "backup_size": " 92K",
+  "source_database": "postgresql://daniel@localhost:5432/wanyu_diaowan_dev",
+  "table_count": 25,
+  "total_records": 369,
+  "backup_date": "2025-09-03T18:26:37+08:00",
+  "backup_type": "full",
+  "compression": false,
+  "format": "plain_sql"
+}
