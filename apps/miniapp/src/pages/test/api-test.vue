@@ -9,12 +9,7 @@
         <text class="result-content">{{ bannersResult }}</text>
       </view>
       
-      <button @click="testArticlesAPI" class="test-btn">测试文章API</button>
-      <view v-if="articlesResult" class="result">
-        <text class="result-title">文章API结果:</text>
-        <text class="result-content">{{ articlesResult }}</text>
-      </view>
-      
+
       <button @click="testNavigation" class="test-btn">测试页面跳转</button>
     </view>
   </view>
@@ -26,8 +21,7 @@ import { buildApiUrl, API_CONFIG } from '../../config/api.js'
 export default {
   data() {
     return {
-      bannersResult: '',
-      articlesResult: ''
+      bannersResult: ''
     }
   },
   
@@ -58,31 +52,7 @@ export default {
       }
     },
     
-    async testArticlesAPI() {
-      try {
-        console.log('测试文章API...')
-        const response = await uni.request({
-          url: buildApiUrl(API_CONFIG.ENDPOINTS.ARTICLES.LIST),
-          method: 'GET'
-        })
-        
-        this.articlesResult = JSON.stringify(response, null, 2)
-        console.log('文章API响应:', response)
-        
-        uni.showToast({
-          title: '文章API测试成功',
-          icon: 'success'
-        })
-      } catch (error) {
-        console.error('文章API测试失败:', error)
-        this.articlesResult = `错误: ${error.message}`
-        
-        uni.showToast({
-          title: '文章API测试失败',
-          icon: 'error'
-        })
-      }
-    },
+
     
     testNavigation() {
       console.log('测试页面跳转...')

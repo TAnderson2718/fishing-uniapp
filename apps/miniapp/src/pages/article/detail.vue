@@ -6,56 +6,20 @@
       <text class="loading-text">加载中...</text>
     </view>
 
-    <!-- 文章内容 -->
+    <!-- 新闻内容 -->
     <view v-else-if="article" class="article-content">
-      <!-- 封面图片 -->
-      <view v-if="article.coverImage" class="cover-section">
-        <image 
-          :src="article.coverImage" 
-          class="cover-image" 
-          mode="aspectFill"
-        />
-      </view>
-
-      <!-- 文章头部信息 -->
+      <!-- 新闻头部信息 -->
       <view class="article-header">
         <text class="article-title">{{ article.title }}</text>
         <view class="article-meta">
           <text class="publish-time">{{ formatTime(article.publishedAt) }}</text>
-          <text class="view-count">阅读 {{ article.viewCount }}</text>
+          <text class="author">作者：{{ article.author }}</text>
         </view>
       </view>
 
-      <!-- 文章摘要 -->
-      <view v-if="article.summary" class="article-summary">
-        <text class="summary-text">{{ article.summary }}</text>
-      </view>
-
-      <!-- 文章正文 -->
+      <!-- 新闻正文 -->
       <view class="article-body">
         <rich-text :nodes="article.content" class="rich-content"></rich-text>
-      </view>
-
-      <!-- 文章图片 -->
-      <view v-if="article.images && article.images.length > 0" class="article-images">
-        <view class="images-title">
-          <text>相关图片</text>
-        </view>
-        <view class="images-grid">
-          <view 
-            v-for="(image, index) in article.images" 
-            :key="image.id"
-            class="image-item"
-            @click="previewImage(image.url, article.images)"
-          >
-            <image 
-              :src="image.url" 
-              :alt="image.alt"
-              class="article-image" 
-              mode="aspectFill"
-            />
-          </view>
-        </view>
       </view>
     </view>
 
@@ -98,12 +62,13 @@ export default {
       try {
         const { buildApiUrl } = await import('../../config/api.js')
         const response = await uni.request({
-          url: buildApiUrl(`/articles/${this.articleId}`),
+          url: buildApiUrl(`/news/public/${this.articleId}`),
           method: 'GET'
         })
 
         if (response.statusCode === 200) {
-          this.article = response.data
+          // News接口返回格式: {success: true, data: newsItem}
+          this.article = response.data.data || response.data
         } else {
           throw new Error(`HTTP ${response.statusCode}`)
         }

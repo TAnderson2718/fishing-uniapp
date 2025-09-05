@@ -1,0 +1,548 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String            @id @default(cuid())
+  role             Role              @default(CUSTOMER)
+  nickname         String?
+  avatarUrl        String?
+  phone            String?           @unique
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  identities       AuthIdentity[]
+  comments         Comment[]
+  profile          EmployeeProfile?
+  likes            Like[]
+  memberships      Membership[]
+  orders           Order[]
+  posts            Post[]
+  verifiedTickets  Ticket[]          @relation("VerifiedBy")
+  verificationLogs VerificationLog[] @relation("VerifiedByLog")
+  operationLogs    OperationLog[]
+}
+
+model AuthIdentity {
+  id           String   @id @default(cuid())
+  userId       String
+  provider     Provider
+  externalId   String
+  passwordHash String?
+  passwordSalt String?
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id])
+
+  @@unique([provider, externalId])
+  @@index([userId])
+}
+
+model MemberPlan {
+  id           String       @id @default(cuid())
+  name         String
+  price        Decimal      @db.Decimal(10, 2)
+  durationDays Int
+  benefits     String?
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  memberships  Membership[]
+  orderItems   OrderItem[]
+}
+
+model Membership {
+  id        String           @id @default(cuid())
+  userId    String
+  planId    String
+  status    MembershipStatus @default(ACTIVE)
+  startAt   DateTime         @default(now())
+  endAt     DateTime
+  createdAt DateTime         @default(now())
+  plan      MemberPlan       @relation(fields: [planId], references: [id])
+  user      User             @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model Activity {
+  id               String            @id @default(cuid())
+  title            String
+  description      String?
+  coverImageUrl    String?
+  address          String?
+  status           ActivityStatus    @default(DRAFT)
+  normalPrice      Decimal           @db.Decimal(10, 2)
+  memberPrice      Decimal           @db.Decimal(10, 2)
+  // 时间类型相关字段
+  timeType         ActivityTimeType  @default(FULL_DAY)
+  durationHours    Int?              // 限时模式的小时数
+  upgradePrice     Decimal?          @db.Decimal(10, 2) // 从限时升级到全天的差价
+  // 排序字段
+  sortOrder        Int               @default(0) // 排序值，数值越小排序越靠前
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  sessions         ActivitySession[]
+  orderItems       OrderItem[]
+  tickets          Ticket[]
+  timedOrders      TimedOrder[]
+
+  @@index([sortOrder])
+}
+
+model ActivitySession {
+  id         String      @id @default(cuid())
+  activityId String
+  startAt    DateTime
+  endAt      DateTime
+  capacity   Int
+  activity   Activity    @relation(fields: [activityId], references: [id])
+  orderItems OrderItem[]
+  tickets    Ticket[]
+
+  @@unique([activityId, startAt])
+  @@index([activityId])
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  userId      String
+  type        OrderType
+  status      OrderStatus @default(CREATED)
+  totalAmount Decimal     @db.Decimal(10, 2)
+  payAmount   Decimal     @db.Decimal(10, 2)
+  currency    String      @default("CNY")
+  createdAt   DateTime    @default(now())
+  paidAt      DateTime?
+  updatedAt   DateTime    @updatedAt
+  user        User        @relation(fields: [userId], references: [id])
+  items       OrderItem[]
+  payment     Payment?
+
+  @@index([userId, createdAt])
+}
+
+model OrderItem {
+  id         String           @id @default(cuid())
+  orderId    String
+  type       OrderType
+  activityId String?
+  sessionId  String?
+  quantity   Int              @default(1)
+  unitPrice  Decimal          @db.Decimal(10, 2)
+  planId     String?
+  activity   Activity?        @relation(fields: [activityId], references: [id])
+  order      Order            @relation(fields: [orderId], references: [id])
+  plan       MemberPlan?      @relation(fields: [planId], references: [id])
+  session    ActivitySession? @relation(fields: [sessionId], references: [id])
+  tickets    Ticket[]
+
+  @@index([orderId])
+  @@index([activityId])
+  @@index([sessionId])
+  @@index([planId])
+}
+
+model Payment {
+  id            String          @id @default(cuid())
+  orderId       String          @unique
+  provider      PaymentProvider
+  status        PaymentStatus   @default(INIT)
+  amount        Decimal         @db.Decimal(10, 2)
+  currency      String          @default("CNY")
+  prepayId      String?
+  transactionId String?         @unique
+  mchOrderNo    String?         @unique
+  codeUrl       String?
+  notifyRaw     Json?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  verifiedAt    DateTime?
+  verifyNote    String?
+  verifyStatus  String?
+  order         Order           @relation(fields: [orderId], references: [id])
+}
+
+model Ticket {
+  id               String            @id @default(cuid())
+  orderItemId      String
+  activityId       String
+  sessionId        String
+  code             String            @unique
+  status           TicketStatus      @default(UNUSED)
+  verifiedAt       DateTime?
+  verifiedById     String?
+  createdAt        DateTime          @default(now())
+  activity         Activity          @relation(fields: [activityId], references: [id])
+  orderItem        OrderItem         @relation(fields: [orderItemId], references: [id])
+  session          ActivitySession   @relation(fields: [sessionId], references: [id])
+  verifiedBy       User?             @relation("VerifiedBy", fields: [verifiedById], references: [id])
+  verificationLogs VerificationLog[]
+  timedOrder       TimedOrder?
+
+  @@index([orderItemId])
+  @@index([activityId])
+  @@index([sessionId])
+}
+
+model VerificationLog {
+  id           String             @id @default(cuid())
+  ticketId     String
+  verifiedById String
+  result       VerificationResult
+  note         String?
+  createdAt    DateTime           @default(now())
+  ticket       Ticket             @relation(fields: [ticketId], references: [id])
+  verifiedBy   User               @relation("VerifiedByLog", fields: [verifiedById], references: [id])
+
+  @@index([ticketId])
+  @@index([verifiedById])
+}
+
+model Post {
+  id            String      @id @default(cuid())
+  userId        String
+  content       String
+  status        PostStatus  @default(PENDING)
+  likesCount    Int         @default(0)
+  commentsCount Int         @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  comments      Comment[]
+  likes         Like[]
+  user          User        @relation(fields: [userId], references: [id])
+  images        PostImage[]
+
+  @@index([status, createdAt])
+}
+
+model PostImage {
+  id        String @id @default(cuid())
+  postId    String
+  url       String
+  sortOrder Int    @default(0)
+  post      Post   @relation(fields: [postId], references: [id])
+
+  @@index([postId])
+}
+
+model Comment {
+  id        String        @id @default(cuid())
+  postId    String
+  userId    String
+  content   String
+  status    CommentStatus @default(VISIBLE)
+  createdAt DateTime      @default(now())
+  post      Post          @relation(fields: [postId], references: [id])
+  user      User          @relation(fields: [userId], references: [id])
+
+  @@index([postId, createdAt])
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([postId, userId])
+  @@index([postId])
+}
+
+// 轮播图模型
+model Banner {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  imageUrl    String
+  linkType    BannerLinkType @default(ARTICLE)
+  linkValue   String?      // 链接值：文章ID、外部链接等
+  sortOrder   Int          @default(0)
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+
+
+model ShopInfo {
+  id      String  @id @default("default")
+  name    String
+  address String?
+  phone   String?
+  about   String?
+  images  Json?
+}
+
+model EmployeeProfile {
+  id           String  @id @default(cuid())
+  userId       String  @unique
+  employeeCode String? @unique
+  title        String?
+  active       Boolean @default(true)
+  user         User    @relation(fields: [userId], references: [id])
+}
+
+// 操作日志模型
+model OperationLog {
+  id            String            @id @default(cuid())
+  userId        String?           // 操作用户ID，可为空（系统操作）
+  userType      Role?             // 用户类型
+  userName      String?           // 用户名/昵称
+  operationType OperationType     // 操作类型
+  action        String            // 具体操作动作
+  description   String            // 操作描述
+  targetType    String?           // 操作目标类型（如：Activity、Order、User等）
+  targetId      String?           // 操作目标ID
+  targetName    String?           // 操作目标名称
+  details       Json?             // 操作详情（JSON格式）
+  ipAddress     String?           // IP地址
+  userAgent     String?           // 用户代理
+  result        OperationResult   @default(SUCCESS) // 操作结果
+  errorMessage  String?           // 错误信息（失败时）
+  createdAt     DateTime          @default(now())
+  user          User?             @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([operationType])
+  @@index([createdAt])
+  @@index([userType])
+  @@index([result])
+}
+
+// 限时订单模型
+model TimedOrder {
+  id              String              @id @default(cuid())
+  ticketId        String              @unique
+  activityId      String
+  startTime       DateTime?           // 开始计时时间（核销时间）
+  endTime         DateTime?           // 结束时间
+  durationHours   Int                 // 时长（小时）
+  status          TimedOrderStatus    @default(PENDING)
+  isExpired       Boolean             @default(false)
+  expiredAt       DateTime?           // 到期时间
+  notifiedAt      DateTime?           // 提醒时间
+  isUpgraded      Boolean             @default(false) // 是否已升级到全天
+  upgradedAt      DateTime?           // 升级时间
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  ticket          Ticket              @relation(fields: [ticketId], references: [id])
+  activity        Activity            @relation(fields: [activityId], references: [id])
+  extensions      OrderExtension[]
+
+  @@index([ticketId])
+  @@index([activityId])
+  @@index([status])
+  @@index([expiredAt])
+}
+
+// 订单续费/升级记录
+model OrderExtension {
+  id            String      @id @default(cuid())
+  timedOrderId  String
+  extensionType ExtensionType
+  paymentAmount Decimal     @db.Decimal(10, 2) // 支付金额
+  addedHours    Int?        // 增加的小时数（限时续费）
+  convertedToFullDay Boolean @default(false) // 是否转换为全天
+  paymentStatus PaymentStatus @default(INIT)
+  upgradeOrderId String?    // 升级订单ID（用于升级场景）
+  createdAt     DateTime    @default(now())
+  timedOrder    TimedOrder  @relation(fields: [timedOrderId], references: [id])
+
+  @@index([timedOrderId])
+}
+
+enum Role {
+  CUSTOMER
+  STAFF
+  ADMIN
+}
+
+enum Provider {
+  WECHAT_MINI
+  PASSWORD
+}
+
+enum ActivityStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum OrderType {
+  TICKET
+  MEMBERSHIP
+}
+
+enum OrderStatus {
+  CREATED
+  PENDING
+  PAID
+  CANCELLED
+  REFUNDED
+  FAILED
+}
+
+enum PaymentProvider {
+  WECHAT_PAY
+}
+
+enum PaymentStatus {
+  INIT
+  PREPARED
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum TicketStatus {
+  UNUSED
+  USED
+  EXPIRED
+  REFUNDED
+}
+
+enum VerificationResult {
+  SUCCESS
+  FAILED
+}
+
+enum PostStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum CommentStatus {
+  VISIBLE
+  HIDDEN
+  DELETED
+}
+
+enum MembershipStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum ActivityTimeType {
+  FULL_DAY    // 全天模式
+  TIMED       // 限时模式
+  BOTH        // 支持两种模式
+}
+
+enum TimedOrderStatus {
+  PENDING     // 待开始
+  ACTIVE      // 进行中
+  EXPIRED     // 已到期
+  EXTENDED    // 已续费
+  COMPLETED   // 已完成
+}
+
+enum ExtensionType {
+  ADD_TIME        // 增加时间
+  CONVERT_FULL_DAY // 转换为全天
+}
+
+enum BannerLinkType {
+  ARTICLE    // 链接到文章
+  ACTIVITY   // 链接到活动
+  EXTERNAL   // 外部链接
+  NONE       // 无链接
+}
+
+
+
+enum OperationType {
+  // 用户相关操作
+  USER_LOGIN          // 用户登录
+  USER_LOGOUT         // 用户登出
+  USER_REGISTER       // 用户注册
+  USER_UPDATE_PROFILE // 更新个人信息
+  USER_DELETE         // 删除用户
+  USER_ROLE_CHANGE    // 角色变更
+
+  // 订单相关操作
+  ORDER_CREATE        // 创建订单
+  ORDER_PAY           // 支付订单
+  ORDER_CANCEL        // 取消订单
+  ORDER_REFUND        // 退款订单
+  ORDER_UPDATE        // 更新订单
+
+  // 支付相关操作
+  PAYMENT_SUCCESS     // 支付成功
+  PAYMENT_FAILURE     // 支付失败
+
+  // 活动相关操作
+  ACTIVITY_CREATE     // 创建活动
+  ACTIVITY_UPDATE     // 更新活动
+  ACTIVITY_DELETE     // 删除活动
+  ACTIVITY_PUBLISH    // 发布活动
+  ACTIVITY_ARCHIVE    // 归档活动
+
+  // 票务相关操作
+  TICKET_CREATE       // 创建票券
+  TICKET_VERIFY       // 核销票务
+  TICKET_REFUND       // 退票
+
+  // 会员相关操作
+  MEMBERSHIP_CREATE   // 创建会员
+  MEMBERSHIP_ACTIVATE // 激活会员
+  MEMBERSHIP_UPDATE   // 更新会员
+  MEMBERSHIP_CANCEL   // 取消会员
+
+  // 限时订单相关操作
+  TIMED_ORDER_CREATE  // 创建限时订单
+  TIMED_ORDER_EXTEND  // 延长限时订单
+  TIMED_ORDER_EXPIRE  // 限时订单过期
+
+  // 内容相关操作
+  POST_CREATE         // 创建帖子
+  POST_UPDATE         // 更新帖子
+  POST_DELETE         // 删除帖子
+  POST_APPROVE        // 审核通过帖子
+  POST_REJECT         // 拒绝帖子
+
+  // 系统相关操作
+  SYSTEM_CONFIG       // 系统配置
+  SYSTEM_BACKUP       // 系统备份
+  SYSTEM_MAINTENANCE  // 系统维护
+
+  // 其他操作
+  OTHER               // 其他操作
+}
+
+enum OperationResult {
+  SUCCESS             // 成功
+  FAILURE             // 失败
+  FAILED              // 失败（保持兼容性）
+  PARTIAL_SUCCESS     // 部分成功
+}
+
+// 新闻资讯模型
+model News {
+  id          String      @id @default(cuid())
+  title       String      // 新闻标题
+  content     String      @db.Text // 新闻内容（支持HTML）
+  author      String      // 作者
+  status      NewsStatus  @default(DRAFT) // 状态
+  publishedAt DateTime?   // 发布时间
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@map("news")
+  @@index([status, publishedAt])
+  @@index([status, createdAt])
+}
+
+enum NewsStatus {
+  DRAFT      // 草稿
+  PUBLISHED  // 已发布
+}

@@ -49,11 +49,7 @@ export const API_CONFIG = {
       CANCEL: '/activities/cancel'
     },
     
-    // 文章相关
-    ARTICLES: {
-      LIST: '/articles',
-      DETAIL: '/articles'
-    },
+
 
     // 新闻资讯相关
     NEWS: {

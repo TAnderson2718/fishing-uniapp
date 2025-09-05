@@ -16,11 +16,7 @@ export enum ActivityStatus {
   ARCHIVED = 'ARCHIVED'
 }
 
-export enum ArticleStatus {
-  DRAFT = 'DRAFT',
-  PUBLISHED = 'PUBLISHED',
-  ARCHIVED = 'ARCHIVED'
-}
+
 
 export enum PostStatus {
   PENDING = 'PENDING',
@@ -82,28 +78,16 @@ export interface Activity {
   sessions?: ActivitySession[]
 }
 
-// 文章类型
-export interface ArticleImage {
-  id: ID
-  articleId: ID
-  url: URL
-  caption?: string
-  sortOrder: number
-}
-
-export interface Article {
+// 新闻类型（替代Article系统）
+export interface News {
   id: ID
   title: string
-  summary: string
   content: string
-  coverImage?: URL
-  status: ArticleStatus
+  author: string
+  status: 'DRAFT' | 'PUBLISHED'
   publishedAt?: Timestamp
-  viewCount: number
-  sortOrder: number
   createdAt: Timestamp
   updatedAt: Timestamp
-  images?: ArticleImage[]
 }
 
 // 用户类型
