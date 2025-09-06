@@ -395,17 +395,16 @@ export default {
       console.log('🎠 开始加载轮播图数据...')
 
       try {
-        // 先尝试直接API调用，避免缓存配置问题
-        const { buildApiUrl } = await import('../../config/api.js')
-
+        // 直接使用完整URL，避免导入问题
         const response = await uni.request({
-          url: buildApiUrl('/banners'),
-          method: 'GET'
+          url: 'https://wanyudiaowan.cn/api/banners',
+          method: 'GET',
+          timeout: 10000
         })
 
         console.log('🎠 轮播图API响应:', { statusCode: response.statusCode, data: response.data })
 
-        if (response.statusCode === 200) {
+        if (response.statusCode === 200 && response.data && Array.isArray(response.data)) {
           this.banners = response.data.map(banner => ({
             id: banner.id,
             image: banner.imageUrl,
@@ -417,31 +416,38 @@ export default {
           console.log('🎠 格式化后的轮播图数据:', this.banners)
           console.log('✅ 轮播图数据加载完成')
         } else {
-          throw new Error(`HTTP ${response.statusCode}`)
+          throw new Error(`HTTP ${response.statusCode} 或数据格式错误`)
         }
       } catch (error) {
         console.error('❌ 加载轮播图失败:', error)
 
-        // 使用安全的后备数据，指向实际存在的资源
-        console.log('🔄 使用后备轮播图数据...')
+        // 使用模拟数据，确保包含3张轮播图
+        console.log('🔄 使用模拟轮播图数据...')
         this.banners = [
           {
-            id: 'fallback-banner-1',
+            id: 'mock-banner-1',
             image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=400&fit=crop',
-            title: '亲子钓鱼活动',
+            title: '春季钓鱼大赛',
             linkType: 'ACTIVITY',
             linkValue: 'family-fishing'
           },
           {
-            id: 'fallback-banner-2',
+            id: 'mock-banner-2',
             image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=400&fit=crop',
             title: '新品装备上市',
             linkType: 'EXTERNAL',
             linkValue: 'https://shop.example.com'
+          },
+          {
+            id: 'mock-banner-3',
+            image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=400&fit=crop',
+            title: '会员专享优惠',
+            linkType: 'EXTERNAL',
+            linkValue: '/pages/membership/index'
           }
         ]
 
-        console.log('🔄 使用后备数据后的轮播图:', this.banners)
+        console.log('🔄 使用模拟数据后的轮播图:', this.banners)
       }
     },
 
